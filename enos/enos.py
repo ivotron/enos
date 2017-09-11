@@ -61,7 +61,7 @@ import operator
 
 @enostask("""
 usage: enos up  [-e ENV|--env=ENV][-f CONFIG_PATH] [--force-deploy]
-                [-t TAGS|--tags=TAGS] [-s|--silent|-vv]
+                [-t TAGS|--tags=TAGS] [-s|--silent|-vv] [--skip-install]
 
 Get resources and install the docker registry.
 
@@ -75,6 +75,8 @@ Options:
   --force-deploy       Force deployment [default: False].
   -s --silent          Quiet mode.
   -t TAGS --tags=TAGS  Only run ansible tasks tagged with these values.
+  --skip-install       Only obtain resources without installing the registry
+                       [default: False].
   -vv                  Verbose mode.
 
 """)
@@ -113,6 +115,12 @@ def up(env=None, **kwargs):
     logging.debug("Provider network information: %s", env['provider_net'])
     logging.debug("Provider network interfaces: %s", env['eths'])
 
+    # Wait for resources to be ssh reachable
+    wait_ssh(env)
+
+    if kwargs['--skip-install']:
+        return
+
     # Generates inventory for ansible/kolla
     base_inventory = seekpath(env['config']['inventory'])
     inventory = os.path.join(env['resultdir'], 'multinode')
@@ -120,9 +128,6 @@ def up(env=None, **kwargs):
     logging.info('Generates inventory %s' % inventory)
 
     env['inventory'] = inventory
-
-    # Wait for resources to be ssh reachable
-    wait_ssh(env)
 
     # Set variables required by playbooks of the application
     env['config'].update({

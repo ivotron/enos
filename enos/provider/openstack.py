@@ -242,6 +242,10 @@ def check_servers(session, resources, extra_prefix="",
     elif len(servers) > 0 and len(servers) < wanted:
         raise Exception("Only %s/%s servers found" % (servers, wanted))
 
+    # key_name can be read from the environment, if not given
+    if not key_name:
+        key_name = os.environ.get("OS_KEYNAME")
+
     # starting the servers
     total = 0
     for size, role, number in gen_resources(resources):
